@@ -1,0 +1,8 @@
+[package]
+name = "test-lazy"
+version = "0.1.0"
+authors = ["Peter Hrvola <peter.hrvola@hotmail.com>"]
+
+[dependencies]
+lazy_static = "1.1.0"
+typemap = "0.3.3"
