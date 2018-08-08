@@ -1,11 +1,10 @@
 #[macro_use] extern crate lazy_static;
-extern crate typemap;
 
 use std::marker::PhantomData;
-use typemap::{ShareMap, TypeMap};
+use std::any::Any;
 use std::cell::RefCell;
 
-thread_local!(static STACK: RefCell<Vec<ShareMap>> = RefCell::new(Vec::new()));
+thread_local!(static STACK: RefCell<Vec<Box<Any>>> = RefCell::new(Vec::new()));
 
 trait TypeHolder: 'static + Sync + Send {}
 
@@ -14,9 +13,9 @@ struct StackEntry<TH: TypeHolder> {
     p: PhantomData<TH>
 }
 
-impl<T: TypeHolder> typemap::Key for StackEntry<T> {
-     type Value = StackEntry<TH>;
-}
+// impl<T: TypeHolder> typemap::Key for StackEntry<T> {
+//     type Value = StackEntry<TH>;
+// }
 
 impl<T: TypeHolder> StackEntry<T> {
     fn print(&self) {
@@ -44,15 +43,18 @@ fn is_empty<T: TypeHolder>() -> bool {
 
 fn insert_new<T: TypeHolder>() {
     STACK.with(|stack| {
-        let mut map = TypeMap::custom();
-        map.insert::<StackEntry<T>>(StackEntry{p: Default::default()});
-        stack.borrow_mut().push(map);
+        stack.borrow_mut().push(Box::new(StackEntry{
+            p: Default::default(),
+            } as StackEntry<TH>));
     });
 }
 
 fn print_first<T: TypeHolder>() {
     STACK.with(|stack| {
-        (*stack.borrow()[0].get::<StackEntry<TH>>().unwrap()).print();
+        let s = &stack.borrow()[0];
+        let s = s.downcast_ref::<StackEntry<TH>>().unwrap();
+        s.print();
+        s.print();
     });
 }
 
